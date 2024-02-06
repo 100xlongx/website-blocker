@@ -1,17 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "Website Blocker",
+  "name": "Reddit Blocker",
   "version": "1.0",
-  "permissions": ["webRequest", "webRequestBlocking", "storage", "*://*/*"],
+  "description": "Blocks reddit.com",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "permissions": ["declarativeNetRequest", "activeTab"],
   "background": {
     "service_worker": "background.js"
-  },
-  "action": {
-    "default_popup": "popup.html",
-    "default_icon": {
-      "16": "images/icon16.png",
-      "48": "images/icon48.png",
-      "128": "images/icon128.png"
-    }
   }
 }
