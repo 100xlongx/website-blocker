@@ -3,49 +3,59 @@ document.addEventListener("DOMContentLoaded", function () {
   const websiteInput = document.getElementById("website");
   const blockedSitesList = document.getElementById("blockedSitesList");
 
-  // Function to render the list of blocked sites
-  function renderBlockedSites() {
-    const sites = JSON.parse(localStorage.getItem("blockedSites") || "[]");
-    blockedSitesList.innerHTML = ""; // Clear current list
+  // Function to add a site to the block list
+  function addSite() {
+    const site = websiteInput.value.trim();
+    if (!site) return; // Do nothing if the input is empty
 
-    sites.forEach((site, index) => {
-      const siteItem = document.createElement("div");
-      siteItem.className = "site-item";
-      siteItem.textContent = site;
-
-      const removeButton = document.createElement("button");
-      removeButton.textContent = "Remove";
-      removeButton.onclick = function () {
-        removeSite(index);
-      };
-
-      siteItem.appendChild(removeButton);
-      blockedSitesList.appendChild(siteItem);
+    // Retrieve the current list, add the new site, and save it back
+    chrome.storage.local.get(["blockedSites"], function (result) {
+      const sites = result.blockedSites || [];
+      if (!sites.includes(site)) {
+        // Avoid duplicating sites
+        sites.push(site);
+        chrome.storage.local.set({ blockedSites: sites }, function () {
+          renderBlockedSites();
+          websiteInput.value = ""; // Clear the input field after adding
+        });
+      }
     });
   }
 
-  // Function to add a new site to the block list
-  function addSite() {
-    const site = websiteInput.value.trim();
-    if (site) {
-      const sites = JSON.parse(localStorage.getItem("blockedSites") || "[]");
-      if (!sites.includes(site)) {
-        sites.push(site);
-        localStorage.setItem("blockedSites", JSON.stringify(sites));
-        renderBlockedSites(); // Update the list display
-        websiteInput.value = ""; // Clear input field
-      }
-    }
+  // Function to remove a site from the block list
+  function removeSite(siteToRemove) {
+    chrome.storage.local.get(["blockedSites"], function (result) {
+      const sites = result.blockedSites || [];
+      const filteredSites = sites.filter((site) => site !== siteToRemove);
+      chrome.storage.local.set(
+        { blockedSites: filteredSites },
+        renderBlockedSites,
+      );
+    });
   }
 
-  // Function to remove a site from the block list
-  function removeSite(index) {
-    const sites = JSON.parse(localStorage.getItem("blockedSites") || "[]");
-    sites.splice(index, 1); // Remove the site at the specified index
-    localStorage.setItem("blockedSites", JSON.stringify(sites));
-    renderBlockedSites(); // Update the list display
+  // Function to render the list of blocked sites in the popup
+  function renderBlockedSites() {
+    chrome.storage.local.get(["blockedSites"], function (result) {
+      const sites = result.blockedSites || [];
+      blockedSitesList.innerHTML = ""; // Clear the list before rendering
+
+      sites.forEach((site) => {
+        const siteItem = document.createElement("div");
+        siteItem.textContent = site;
+
+        const removeButton = document.createElement("button");
+        removeButton.textContent = "Remove";
+        removeButton.addEventListener("click", function () {
+          removeSite(site);
+        });
+
+        siteItem.appendChild(removeButton);
+        blockedSitesList.appendChild(siteItem);
+      });
+    });
   }
 
   blockButton.addEventListener("click", addSite);
-  renderBlockedSites(); // Initial rendering of the blocked sites
+  renderBlockedSites(); // Initial rendering of the block list
 });
